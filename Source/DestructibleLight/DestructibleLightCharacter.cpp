@@ -106,23 +106,22 @@ void ADestructibleLightCharacter::BeginPlay()
 	CurrentHUD = Cast<ADestructibleLightHUD>(GetHUD());
 }
 
-APickable* ADestructibleLightCharacter::GetUsableInView()
+APickable* ADestructibleLightCharacter::GetPickableInView()
 {
-
-	FVector camLoc;
-	FRotator camRot;
 	if (Controller == nullptr)
 		return nullptr;
+	FVector cameraLocation;
+	FRotator cameraRotation;
 
-	Controller->GetPlayerViewPoint(camLoc, camRot);
-	FVector start = camLoc;// FirstPersonCameraComponent->GetComponentLocation();
-	FVector forwardVector = camRot.Vector();// FirstPersonCameraComponent->GetForwardVector();
-	FVector end = start + (forwardVector * PickupRange); // ((forwardVector * PickupRange) + start);
+	Controller->GetPlayerViewPoint(cameraLocation, cameraRotation);
+	FVector start = cameraLocation;
+	FVector forwardVector = cameraRotation.Vector();
+	FVector end = start + (forwardVector * PickupRange);
 
 	FHitResult Hit;
 	FComponentQueryParams DefaultComponentQueryParams;
 	FCollisionResponseParams DefaultResponseParam;
-	AActor* actor = nullptr;
+
 	if (GetWorld()->LineTraceSingleByChannel(Hit, start, end, ECC_Visibility, DefaultComponentQueryParams, DefaultResponseParam))
 	{
 
@@ -131,33 +130,14 @@ APickable* ADestructibleLightCharacter::GetUsableInView()
 			return Cast<APickable>(Hit.GetActor());
 		}
 	}
-	else
-	{
-		return nullptr;
-	}
-
 	return nullptr;
-	/*
-		const FVector start_trace = camLoc;
-		const FVector direction = camRot.Vector();
-		const FVector end_trace = start_trace + (direction * MaxUseDistance);
-
-		FCollisionQueryParams TraceParams(FName(TEXT("")), true, this);
-		TraceParams.bTraceAsyncScene = true;
-		TraceParams.bReturnPhysicalMaterial = false;
-		TraceParams.bTraceComplex = true;
-
-		FHitResult Hit(ForceInit);
-		GetWorld()->LineTraceSinglByChannele(Hit, start_trace, end_trace, ECC_Visibility, TraceParams);
-	*/
-	//return Cast<APickable>(Hit.GetActor());
 }
 
 void ADestructibleLightCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	currentItem = GetUsableInView();
+	currentItem = GetPickableInView();
 	if (currentItem)
 	{
 		if (CurrentHUD)
@@ -203,13 +183,11 @@ void ADestructibleLightCharacter::SetupPlayerInputComponent(class UInputComponen
 }
 void ADestructibleLightCharacter::ServerAction_Implementation()
 {
-	MulticastAction();
-	currentItem = GetUsableInView();
+	currentItem = GetPickableInView();
 	if (currentItem)
 	{
-		//inventory.Add(currentItem->ObjectName);
-		//CurrentHUD->PickUpItem(currentItem->texture);
 		currentItem->Destroy();
+		ClientAction();
 	}
 	
 }
@@ -217,19 +195,13 @@ void ADestructibleLightCharacter::OnAction()
 {
 	ServerAction();
 }
-void ADestructibleLightCharacter::MulticastAction_Implementation()
+void ADestructibleLightCharacter::ClientAction_Implementation()
 {
 	if (currentItem)
 	{
 		inventory.Add(currentItem->ObjectName);
 		CurrentHUD->PickUpItem(currentItem->texture);
-		//currentItem->Destroy();
 	}
-}
-void ADestructibleLightCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
 }
 
 void ADestructibleLightCharacter::MulticastShoot_Implementation(FRotator rotation)

@@ -38,7 +38,7 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 public:
-	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -110,35 +110,34 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
-	/** Perform shoot on all instances*/
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 	void MulticastShoot(FRotator rotation);
 	void MulticastShoot_Implementation(FRotator rotation);
 	bool MulticastShoot_Validate(FRotator rotation) { return true; }
 
-	/** Perform shoot on all instances*/
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerShoot(FRotator rotation);
 	void ServerShoot_Implementation(FRotator rotation);
 	bool ServerShoot_Validate(FRotator rotation) { return true; }
 
-	/** Perform shoot on all instances*/
 	UFUNCTION(Reliable, Server, WithValidation)
 		void ServerAction();
 	void ServerAction_Implementation();
 	bool ServerAction_Validate() { return true; }
 
-	/** Perform shoot on all instances*/
 	UFUNCTION(Reliable, Client, WithValidation)
-		void MulticastAction();
-	void MulticastAction_Implementation();
-	bool MulticastAction_Validate() { return true; }
-	/*
-	Performs raytrace to find closest looked-at UsableActor.
-*/
-	class APickable* GetUsableInView();
+		void ClientAction();
+	void ClientAction_Implementation();
+	bool ClientAction_Validate() { return true; }
+
+	
 private:
+
+	// Get current HUD object
 	class AHUD* GetHUD();
+
+	// Get pickable object in view
+	class APickable* GetPickableInView();
 
 	class ADestructibleLightHUD* CurrentHUD;
 };
