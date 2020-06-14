@@ -165,8 +165,7 @@ void ADestructibleLightCharacter::SetupPlayerInputComponent(class UInputComponen
 
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ADestructibleLightCharacter::OnFire);
-	// Bind change color event
-	PlayerInputComponent->BindAction("ChangeColor", IE_Pressed, this, &ADestructibleLightCharacter::ChangeColor);
+
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ADestructibleLightCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ADestructibleLightCharacter::MoveRight);
@@ -289,14 +288,6 @@ void ADestructibleLightCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(GetActorRightVector(), Value);
 	}
-}
-
-void ADestructibleLightCharacter::ChangeColor()
-{
-	static int num = 1;
-	ADestructibleLightProjectile::color = num;
-	num++;
-	if (num > 4) num = 1;
 }
 
 void ADestructibleLightCharacter::TurnAtRate(float Rate)

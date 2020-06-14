@@ -43,20 +43,6 @@ ADestructibleLightProjectile::ADestructibleLightProjectile()
 		ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 
-	UMaterialInterface * Material = ProjectileMeshComponent->GetMaterial(0);
-	UMaterialInstanceDynamic* matInstance = ProjectileMeshComponent->CreateDynamicMaterialInstance(0, Material);
-
-	if (color == 4)
-		actualColor = FLinearColor::White;
-	else
-		actualColor = FLinearColor(color == 1 ? 1.0f : 0.0f, //Red
-			color == 2 ? 1.0f : 0.0f, //Green
-			color == 3 ? 1.0f : 0.0f); //Blue
-
-	if (matInstance != nullptr)
-		matInstance->SetVectorParameterValue("DiffuseColor", actualColor);
-	ProjectileMeshComponent->SetMaterial(0, matInstance);
-
 }
 
 void ADestructibleLightProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -70,5 +56,3 @@ void ADestructibleLightProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* O
 		Destroy();
 	}
 }
-
-int ADestructibleLightProjectile::color = 1;

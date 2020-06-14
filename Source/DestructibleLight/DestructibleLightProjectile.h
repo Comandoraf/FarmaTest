@@ -34,17 +34,7 @@ public:
 	/**Projectile mesh*/
 	UStaticMeshComponent* ProjectileMeshComponent;
 
-	/**
-	1 = Red
-	2 = Green
-	3 = Blue
-	4 = White
-	*/
-	static int color;
-	FLinearColor GetActualColor() { return actualColor; }
 private:
-
-	FLinearColor actualColor;
 
 };
 
