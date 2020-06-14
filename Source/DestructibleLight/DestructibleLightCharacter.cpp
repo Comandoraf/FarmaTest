@@ -13,10 +13,8 @@
 #include "Animation/AnimBlueprint.h"
 #include "Engine/World.h"
 #include "Pickable.h"
-#include "DrawDebugHelpers.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/Engine.h"
-#include "UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 

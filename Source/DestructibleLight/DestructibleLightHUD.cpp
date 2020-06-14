@@ -32,33 +32,37 @@ void ADestructibleLightHUD::DrawHUD()
 	FCanvasTileItem TileItem(CrosshairDrawPosition, CrosshairTex->Resource, FLinearColor::White);
 	TileItem.BlendMode = SE_BLEND_Translucent;
 	Canvas->DrawItem(TileItem);
-	/*FString stringBuilder;
+
+	// draw help
+	FString stringBuilder;
 	stringBuilder.Append("LMB to shoot\n")
 		.Append("RMB to change bullet color\n")
-		.Append("Shoot lamp to change it's state\n")
-		.Append("White bullet turn off\\on lamp\n")
-		.Append("Others bullet changes lamp's colors\n")
 		.Append("You can destroy columns (10 shoots needed)");
-	DrawText(stringBuilder, FLinearColor::Red, 0.0f, Canvas->ClipY * 0.5f, (UFont*)0, 2.0f);*/
+	float textScale = 2.0f *((float(Canvas->ClipY * Canvas->ClipX)) / 921600.0f /*magic number: area of standard screen*/);
+	DrawText(stringBuilder, FLinearColor::Red, 0.0f, Canvas->ClipY * 0.5f, (UFont*)0, textScale);
+
+	//draw inventory
 	float width = Canvas->ClipX * 0.25f;
 	float height = Canvas->ClipY * 0.1f;
 	DrawRect(FLinearColor::Yellow, 0.0f, Canvas->ClipY - height, width, height);
+
 	float nextX = 0.0f;
 	for (auto& item : inventory)
 	{
-		float scale = 1.0f / (float)((float)item->GetSizeY() / (float)height);
-		UE_LOG(LogTemp, Warning, TEXT("Scale:%f"), scale);
-		
+		float scale = 1.0f / ((float)item->GetSizeY() / height);
+
 		DrawTextureSimple(item, nextX, Canvas->ClipY - (item->GetSizeY() * scale), scale);
 		nextX += scale * item->GetSizeX();
 	}
+
+	//draw pickup message
 	if (pickableInRange)
 	{
 		FString stringBuilder;
 		stringBuilder.Append("Pick up ");
 		stringBuilder.Append(pickableName);
-		
-		DrawText(stringBuilder, FLinearColor::Red, Center.X, Center.Y, (UFont*)0, 2.0f);
+
+		DrawText(stringBuilder, FLinearColor::Red, Center.X, Center.Y, (UFont*)0, textScale);
 	}
 }
 
