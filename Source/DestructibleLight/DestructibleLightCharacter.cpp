@@ -8,11 +8,15 @@
 #include "Components/InputComponent.h"
 #include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "DestructibleLightHUD.h"
 #include "ConstructorHelpers.h"
 #include "Animation/AnimBlueprint.h"
-
-//#include "UnrealNetwork.h"
+#include "Engine/World.h"
+#include "Pickable.h"
+#include "DrawDebugHelpers.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/Engine.h"
+#include "UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -42,7 +46,7 @@ ADestructibleLightCharacter::ADestructibleLightCharacter()
 	Mesh1P->CastShadow = false;
 	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
 	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
-	
+
 	// Create a gun mesh component
 	FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
 	FP_Gun->SetOnlyOwnerSee(true);			// only the owning player will see this mesh
@@ -66,8 +70,8 @@ ADestructibleLightCharacter::ADestructibleLightCharacter()
 		Mesh1P->SetSkeletalMesh(BodySkeletalMeshResource.Object);
 		Mesh1P->SetOnlyOwnerSee(false);
 	}
-	
-	
+
+
 	static ConstructorHelpers::FObjectFinder<UAnimBlueprint> BodyAnimResource(TEXT("AnimBlueprint'/Game/FirstPerson/Animations/FirstPerson_AnimBP.FirstPerson_AnimBP'"));
 	if (BodyAnimResource.Succeeded())
 		Mesh1P->SetAnimInstanceClass(BodyAnimResource.Object->GeneratedClass);
@@ -98,6 +102,72 @@ void ADestructibleLightCharacter::BeginPlay()
 
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+
+	CurrentHUD = Cast<ADestructibleLightHUD>(GetHUD());
+}
+
+APickable* ADestructibleLightCharacter::GetUsableInView()
+{
+
+	FVector camLoc;
+	FRotator camRot;
+	if (Controller == nullptr)
+		return nullptr;
+
+	Controller->GetPlayerViewPoint(camLoc, camRot);
+	FVector start = camLoc;// FirstPersonCameraComponent->GetComponentLocation();
+	FVector forwardVector = camRot.Vector();// FirstPersonCameraComponent->GetForwardVector();
+	FVector end = start + (forwardVector * PickupRange); // ((forwardVector * PickupRange) + start);
+
+	FHitResult Hit;
+	FComponentQueryParams DefaultComponentQueryParams;
+	FCollisionResponseParams DefaultResponseParam;
+	AActor* actor = nullptr;
+	if (GetWorld()->LineTraceSingleByChannel(Hit, start, end, ECC_Visibility, DefaultComponentQueryParams, DefaultResponseParam))
+	{
+
+		if (Hit.GetActor()->GetClass()->IsChildOf(APickable::StaticClass()))
+		{
+			return Cast<APickable>(Hit.GetActor());
+		}
+	}
+	else
+	{
+		return nullptr;
+	}
+
+	return nullptr;
+	/*
+		const FVector start_trace = camLoc;
+		const FVector direction = camRot.Vector();
+		const FVector end_trace = start_trace + (direction * MaxUseDistance);
+
+		FCollisionQueryParams TraceParams(FName(TEXT("")), true, this);
+		TraceParams.bTraceAsyncScene = true;
+		TraceParams.bReturnPhysicalMaterial = false;
+		TraceParams.bTraceComplex = true;
+
+		FHitResult Hit(ForceInit);
+		GetWorld()->LineTraceSinglByChannele(Hit, start_trace, end_trace, ECC_Visibility, TraceParams);
+	*/
+	//return Cast<APickable>(Hit.GetActor());
+}
+
+void ADestructibleLightCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	currentItem = GetUsableInView();
+	if (currentItem)
+	{
+		if (CurrentHUD)
+			CurrentHUD->PickableInRange(currentItem->ObjectName);
+	}
+	else
+	{
+		if (CurrentHUD)
+			CurrentHUD->PickableInRange(FString(""));
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -111,6 +181,9 @@ void ADestructibleLightCharacter::SetupPlayerInputComponent(class UInputComponen
 	// Bind jump events
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
+	// Bind action event
+	PlayerInputComponent->BindAction("Action", IE_Pressed, this, &ADestructibleLightCharacter::OnAction);
 
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ADestructibleLightCharacter::OnFire);
@@ -128,14 +201,44 @@ void ADestructibleLightCharacter::SetupPlayerInputComponent(class UInputComponen
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ADestructibleLightCharacter::LookUpAtRate);
 }
+void ADestructibleLightCharacter::ServerAction_Implementation()
+{
+	MulticastAction();
+	currentItem = GetUsableInView();
+	if (currentItem)
+	{
+		//inventory.Add(currentItem->ObjectName);
+		//CurrentHUD->PickUpItem(currentItem->texture);
+		currentItem->Destroy();
+	}
+	
+}
+void ADestructibleLightCharacter::OnAction()
+{
+	ServerAction();
+}
+void ADestructibleLightCharacter::MulticastAction_Implementation()
+{
+	if (currentItem)
+	{
+		inventory.Add(currentItem->ObjectName);
+		CurrentHUD->PickUpItem(currentItem->texture);
+		//currentItem->Destroy();
+	}
+}
+void ADestructibleLightCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+}
 
 void ADestructibleLightCharacter::MulticastShoot_Implementation(FRotator rotation)
 {
-	// try and fire a projectile
-	if (ProjectileClass != NULL)
+	// fire a projectile
+	if (ProjectileClass != nullptr)
 	{
 		UWorld* const World = GetWorld();
-		if (World != NULL)
+		if (World != nullptr)
 		{
 			FRotator SpawnRotation;
 			if (Role == ROLE_SimulatedProxy)
@@ -154,18 +257,18 @@ void ADestructibleLightCharacter::MulticastShoot_Implementation(FRotator rotatio
 		}
 	}
 
-	// try and play the sound if specified
-	if (FireSound != NULL)
+	// play the sound if specified
+	if (FireSound != nullptr)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 	}
 
 	// try and play a firing animation if specified
-	if (FireAnimation != NULL)
+	if (FireAnimation != nullptr)
 	{
 		// Get the animation object for the arms mesh
 		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != NULL)
+		if (AnimInstance != nullptr)
 		{
 			AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
@@ -177,12 +280,27 @@ void ADestructibleLightCharacter::ServerShoot_Implementation(FRotator rotation)
 	MulticastShoot(rotation);
 }
 
+AHUD * ADestructibleLightCharacter::GetHUD()
+{
+	APlayerController* PC = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+	if (!PC)
+	{
+		return nullptr;
+	}
+
+	return PC->GetHUD();
+}
+
 void ADestructibleLightCharacter::OnFire()
 {
 	if (Role == ROLE_Authority)
+	{
 		MulticastShoot(GetControlRotation());
+	}
 	else
+	{
 		ServerShoot(GetControlRotation());
+	}
 }
 
 void ADestructibleLightCharacter::MoveForward(float Value)

@@ -17,9 +17,14 @@ public:
 	/** Primary draw call for the HUD */
 	virtual void DrawHUD() override;
 
+	void PickableInRange(FString name);
+	void PickUpItem(UTexture2D* texture);
 private:
 	/** Crosshair asset pointer */
 	class UTexture2D* CrosshairTex;
+	bool pickableInRange = false;
+	FString pickableName = "";
+	TArray< UTexture2D*> inventory;
 
 };
 

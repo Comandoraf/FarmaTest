@@ -6,7 +6,6 @@
 #include "ConstructorHelpers.h" 
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "SyncLamp.h"
 
 ADestructibleLightProjectile::ADestructibleLightProjectile()
 {
@@ -66,18 +65,7 @@ void ADestructibleLightProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* O
 	{
 		if (Role == ROLE_Authority && OtherActor->Role == ROLE_Authority)
 		{
-			ASyncLamp* lamp = Cast<ASyncLamp>(OtherActor);
-			if (lamp != nullptr)
-			{
-				if (this->GetActualColor() != FLinearColor::White)
-					lamp->ServerSetLightColor(this->GetActualColor());
-				else
-					lamp->ServerSwitchLamp();
-			}
-			else
-			{
-				OtherActor->TakeDamage(10.0f, FDamageEvent(), nullptr, this);
-			}
+			OtherActor->TakeDamage(10.0f, FDamageEvent(), nullptr, this);
 		}
 		Destroy();
 	}
