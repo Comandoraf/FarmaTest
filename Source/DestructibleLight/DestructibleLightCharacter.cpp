@@ -183,7 +183,7 @@ void ADestructibleLightCharacter::ServerAction_Implementation()
 	currentItem = GetPickableInView();
 	if (currentItem)
 	{
-		currentItem->Destroy();
+		currentItem->Pickup();
 		ClientAction();
 	}
 	

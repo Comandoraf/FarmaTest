@@ -22,20 +22,10 @@ protected:
 
 public:	
 
-	/** Perform shoot on all instances*/
-
 	void Pickup();
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere)
 	class UStaticMeshComponent* Mesh;
-
-	/*void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
-
-	UPROPERTY(ReplicatedUsing = OnRep_alreadyDamaged)
-		bool alreadyDamaged = false;*/
-
-	/*UFUNCTION()
-		void OnRep_alreadyDamaged();*/
 
 	UPROPERTY(EditAnywhere)
 		UTexture2D* texture;

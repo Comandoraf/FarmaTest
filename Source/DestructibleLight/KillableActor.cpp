@@ -35,8 +35,6 @@ AKillableActor::AKillableActor()
 		{
 			DestructibleMesh->SetDestructibleMesh(StaticMeshResource.Object);
 		}
-		else
-			UE_LOG(LogTemp, Warning, TEXT("Wrong"));
 	}
 
 	//Particles resources

@@ -34,12 +34,11 @@ void ADestructibleLightHUD::DrawHUD()
 	Canvas->DrawItem(TileItem);
 
 	// draw help
-	FString stringBuilder;
-	stringBuilder.Append("LMB to shoot\n")
-		.Append("RMB to change bullet color\n")
+	FString helpBuilder;
+	helpBuilder.Append("LMB to shoot\n")
 		.Append("You can destroy columns (10 shoots needed)");
-	float textScale = 2.0f *((float(Canvas->ClipY * Canvas->ClipX)) / 921600.0f /*magic number: area of standard screen*/);
-	DrawText(stringBuilder, FLinearColor::Red, 0.0f, Canvas->ClipY * 0.5f, (UFont*)0, textScale);
+	float textScale = 2.0f *((float(Canvas->ClipY * Canvas->ClipX)) / 921600.0f /*magic number: area of default screen*/);
+	DrawText(helpBuilder, FLinearColor::Red, 0.0f, Canvas->ClipY * 0.5f, (UFont*)0, textScale);
 
 	//draw inventory
 	float width = Canvas->ClipX * 0.25f;
